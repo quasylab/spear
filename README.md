@@ -50,4 +50,6 @@ If all the needed package are installed in your system, you have to execute:
 
 ```
 python temperature.py
+python smart_room.py
+python redblue.py
 ```
