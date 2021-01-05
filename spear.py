@@ -62,8 +62,7 @@ def parallel_left(step, p, proc1):
     :param proc1: a process function
     :return: a pair (effect,process)
     """
-    ((sub, proc2), prob) = step
-    return (sub, parallel_process(proc1, p, proc2)), prob
+    return [((sub, parallel_process(proc1,p,proc2)), prob)  for ((sub, proc2), prob) in step ]
 
 
 def parallel_right(step, p, proc2):
@@ -76,8 +75,7 @@ def parallel_right(step, p, proc2):
     :param proc1: a process function
     :return: a pair (effect,process)
     """
-    ((sub, proc1), prob) = step
-    return (sub, parallel_process(proc1, p, proc2)), prob
+    return [((sub, parallel_process(proc1,p,proc2)), prob)  for ((sub, proc1), prob) in step ]
 
 
 def parallel_combine(proc1, next1, p, proc2, next2):
@@ -91,7 +89,7 @@ def parallel_combine(proc1, next1, p, proc2, next2):
     :param next2: step function of proc2
     :return: step function
     """
-    return scale(parallel_left(next2, proc1), p)+scale(parallel_left(next2, proc1), 1-p)
+    return scale(parallel_right(next1, p, proc2), p)+scale(parallel_left(next2, p, proc1), 1-p)
 
 
 def apply_from_data(act_fun, d):
@@ -219,18 +217,20 @@ def average(dlist, f):
 def estimated_cdf(lst):
     return lambda x: len(filter(lambda y: y<=x, lst))/len(lst)
 
+
 def count(lst,start,end,counter,density=True):
     gap = (end-start)/counter
-    xvalues = [ start+gap*i for i in range(counter+1) ]
-    yvalues = [ 0.0 for i in range(counter+1) ]
+    xvalues = [start+gap*i for i in range(counter+1) ]
+    yvalues = [0.0 for i in range(counter+1) ]
     for v in lst:
         if (start <= v < end):
             idx = math.ceil((v-start)/gap)
             yvalues[idx] = yvalues[idx]+1.0
     if density:
-        return xvalues,list(map(lambda v:v/len(lst),yvalues))
+        return xvalues, list(map(lambda v:v/len(lst),yvalues))
     else:
-        return xvalues,yvalues
+        return xvalues, yvalues
+
 
 def plot_histogram(data, indexes, f, start, end, blocks, label, file):
     for i in indexes:
@@ -266,6 +266,15 @@ def distance(pdef1,p1,d1,env1,pdef2,p2,d2,env2,k,n,l,rho):
     return [max(dist[i:]) for i in range(k)]
 
 
+def compute_distance(data1,data2,k,n,l,rho):
+    dist = [ 0 for i in range(k) ]
+    for i in range(k):
+        lst1 = list(map(lambda d: rho(i,d),data1[i]))
+        lst2 = list(map(lambda d: rho(i,d),data2[i]))
+        dist[i] = wasserstein(lst1,lst2,n,l)
+    return [max(dist[i:]) for i in range(k)]
+
+
 def distance_set(pdef1,p1,d1,env1,dlist,k,n,l,rho):
     delta = [ 0 for i in range(k) ]
     for d2 in dlist:
@@ -274,3 +283,11 @@ def distance_set(pdef1,p1,d1,env1,dlist,k,n,l,rho):
             delta[i] = max(delta[i],dist[i])
     return delta
 
+
+def compute_distance_set(data1,dlist,k,n,l,rho):
+    delta = [ 0 for i in range(k) ]
+    for data2 in dlist:
+        dist = compute_distance(data1,data2,k,n,l,rho)
+        for i in range(k):
+            delta[i] = max(delta[i],dist[i])
+    return delta
