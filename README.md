@@ -19,6 +19,10 @@ Adaptability denotes the ability of the program to lead the system back to its d
 
 In [temperature.py](./temperature.py) we show how SPEAR can be used to model a simple heating system in which the thermostat, the program, has to keep the temperature of the room within a desired comfort interval. We use our algorithm to evaluate the differences between two heating systems having the same program but starting from different initial conditions. Finally, we apply it to study the adaptability and reliability of the considered program
 
+In [smart_room.py](./smart_room.py) SPEAR is used to study adaptation of a domotic scenario where two parameters, temperature and air quality, are considered. 
+
+In [redblue.py](./readblue.py) we use SPEAR to study adaptation of a Collective Adaptive Sysems by using mean-field approximation. 
+
 ## Download 
 
 To download SPEAR you have just to clone GitHub project:
