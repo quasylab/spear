@@ -255,6 +255,16 @@ def wasserstein(lst1,lst2,n,l):
     return sum/(n*l)
 
 
+def wassersteine(lst1,lst2,n,l):
+    lst1.sort()
+    lst2.sort()
+    sum = 0.0
+    for i in range(n):
+        for j in range(l):
+            sum += max(lst2[i*l+j]-lst1[i],0.0)
+    return sum/(n*l)
+
+
 def distance(pdef1,p1,d1,env1,pdef2,p2,d2,env2,k,n,l,rho):
     data1 = simulate(pdef1,env1,p1,d1,k,n)
     data2 = simulate(pdef2,env2,p2,d2,k,l*n)
@@ -291,3 +301,65 @@ def compute_distance_set(data1,dlist,k,n,l,rho):
         for i in range(k):
             delta[i] = max(delta[i],dist[i])
     return delta
+
+
+def eval_target(n, l, sample_function, rho, p, elist):
+    return [p-wassersteine(sample_function(n), [rho(ds) for ds in eset],n,l) for eset in elist]
+
+
+def eval_brink(n, l, sample_function, rho, p, elist):
+    return [wassersteine([rho(ds)-p for ds in eset[:n]], sample_function(n*l),n,l) for eset in elist]
+
+
+def eval_not(vlist):
+    return [-v for v in vlist]
+
+
+def eval_and(vlist1,vlist2):
+    l = min(len(vlist1), len(vlist2))
+    vlist = [ 0 for _ in range(0,l)]
+    for i in range(0,l):
+        vlist[i] = min(vlist1[i], vlist2[i])
+    return vlist
+
+
+def eval_or(vlist1,vlist2):
+    l = min(len(vlist1), len(vlist2))
+    vlist = [ 0 for _ in range(0,l) ]
+    for i in range(0,l):
+        vlist[i] = max(vlist1[i], vlist2[i])
+    return vlist
+
+
+def eval_true(elist):
+    return [1.0 for _ in elist]
+
+
+def eval_imply(vlist1,vlist2):
+    l = min(len(vlist1), len(vlist2))
+    vlist = [ 0 for _ in range(0,l) ]
+    for i in range(0,l):
+        vlist[i] = max(-vlist1[i], vlist2[i])
+    return vlist
+
+
+def compute_eventually(vlist):
+    if (len(vlist)==0):
+        return -1
+    else:
+        return max(vlist)
+
+
+def eval_eventually(vlist,a,b):
+    return [ compute_eventually(vlist[i+a:i+b+1]) for i in range(0,len(vlist))]
+
+
+def compute_globally(vlist):
+    if (len(vlist)==0):
+        return 1
+    else:
+        return min(vlist)
+
+
+def eval_globally(vlist,a,b):
+    return [ compute_globally(vlist[i+a:i+b+1]) for i in range(0,len(vlist))]
