@@ -251,7 +251,7 @@ def wasserstein(lst1,lst2,n,l):
     sum = 0.0
     for i in range(n):
         for j in range(l):
-            sum += abs(lst1[i]-lst2[i*l+j])
+            sum += max(lst2[i*l+j]-lis1[i],0)
     return sum/(n*l)
 
 
