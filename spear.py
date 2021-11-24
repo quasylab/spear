@@ -41,6 +41,9 @@ def scale(prob: probability, p: float) -> probability:
     return [(s, x*p) for (s, x) in prob]
 
 
+### PROCESSES 
+
+
 def nil(pdef, d):
     """
     Process function associated with process nil.
@@ -165,6 +168,33 @@ def choice_prob(probprocess):
     return lambda pdef,d: flatten_prob(map_prob(lambda p: p(pdef,d),probprocess))
 
 
+def synch_parallel_process(proc1, proc2):
+    """
+    Return the step function of process proc1||proc2.
+
+    :param proc1: a process
+    :param proc2: a process
+    :return: synchronous parallel composition of proc1 and proc2
+    """
+    return lambda pdef, d: synch_parallel_combine(proc1(pdef, d), proc2(pdef, d))
+
+
+def synch_parallel_combine(next1, next2):
+    """
+    Compute synchronous semantics of proc1 and proc2
+
+    :param proc1: a process
+    :param next1: step function of proc1
+    :param proc2: a process
+    :param next2: step function of proc2
+    :return: step function
+    
+    """
+    return [((sub1 | sub2 , synch_parallel_process(proc1,proc2)), prob1 * prob2) for ((sub1, proc1), prob1) in next1 for ((sub2, proc2), prob2) in next2 ]
+
+
+### EVOLUTION SEQUENCES
+
 def sample_element_from_list( l ):
     u = rnd.random()
     count = 0.0
@@ -192,6 +222,8 @@ def cstep(pdef, env, p, d):
     return q, env(newd)
 
 
+### SIMULATIONS
+
 def run(pdef, env, p, d, k):
     result = [d]
     for i in range(1,k):
@@ -201,6 +233,15 @@ def run(pdef, env, p, d, k):
 
 
 def simulate(pdef, env, p, d, k, n):
+    data = [ [] for i in range(k) ]
+    for i in range(n):
+        sample = run(pdef, env, p, d, k)
+        for j in range(k):
+            data[j].append(sample[j])
+    return data
+
+
+def simulatekkk(pdef, env, p, d, k, n):
     data = [ [] for i in range(k) ]
     for i in range(n):
         sample = run(pdef, env, p, d, k)
@@ -232,6 +273,8 @@ def count(lst,start,end,counter,density=True):
         return xvalues, yvalues
 
 
+### PLOT STYLES
+    
 def plot_histogram(data, indexes, f, start, end, blocks, label, file):
     for i in indexes:
         lst = list(map(f, data[i]))
@@ -244,18 +287,96 @@ def plot_histogram(data, indexes, f, start, end, blocks, label, file):
         plt.savefig(file+"_"+str(i)+".png")
         plt.show()
 
+        
+def plot_histogram_double(data1, data2, indexes, f, start, end, blocks, title, file):
+    for i in indexes:
+        lst1 = list(map(f, data1[i]))
+        lst2 = list(map(f, data2[i]))
+        x1,y1 = count(lst1,start,end,blocks)
+        x2,y2 = count(lst2,start,end,blocks)
+        plt.plot(x1,y1,label='Scen1')
+        plt.plot(x2,y2,label='Scen2')
+        legend=plt.legend()
+        plt.title(title+" step="+str(i)+".")
+        plt.savefig(file+"_"+str(i)+".png")
+        plt.show()
+        
+        
+  def plot_histogram_bis(data, indexes, f, start, end, blocks, label, file):
+        i = indexes
+        lst = list(map(f, data[i]))
+        xvalues,yvalues = count(lst,start,end,blocks)
+        plt.plot(xvalues,yvalues)
+        plt.title(label)
+        plt.savefig(file+"_"+str(i)+".png")
+        plt.show()
+        
+        
+ def plot_histogram_ter(data, f, label, file):
+    valori = []
+    i=0
+    for datasets in data:
+        lista_f = list(map(f, datasets))
+        totale_temp = reduce(lambda x,y: x+y, lista_f)
+        media_temp = totale_temp / len(datasets)
+        valori.append([i,media_temp])
+        i=i+1
+    xvalues = [x for (x,y) in valori ]
+    yvalues = [y for (x,y) in valori ]
+    plt.plot(xvalues,yvalues)
+    plt.title(label)
+    plt.savefig(file+"_"+str(i)+".png")
+    plt.show()
+ 
+
+def plot_histogram_avg(data, f, label, file):
+    valori = []
+    i=0
+    for datasets in data:
+        lista_f = list(map(f, datasets))
+        totale_temp = reduce(lambda x,y: x+y, lista_f)
+        media_temp = totale_temp / len(datasets)
+        valori.append([i,media_temp])
+        i=i+1
+    xvalues = [x for (x,y) in valori ]
+    yvalues = [y for (x,y) in valori ]
+    plt.plot(xvalues,yvalues)
+    plt.title(label)
+    plt.savefig(file+"_"+str(i)+".png")
+    plt.show()
+
+
+def plot_histogram_distance(data, label, file):
+    valori = []
+    i=0
+    for value in data:
+        valori.append([i,value])
+        i=i+1
+    xvalues = [x for (x,y) in valori ]
+    yvalues = [y for (x,y) in valori ]
+    plt.plot(xvalues,yvalues)
+    plt.title(label)
+    plt.savefig(file+"_"+str(i)+".png")
+    plt.show()
+ 
+
+def plot_histogram_adapt(data, label, file):
+    valori = []
+    i=0
+    for value in data:
+        valori.append([i,value])
+        i=i+1
+    xvalues = [x for (x,y) in valori ]
+    yvalues = [y for (x,y) in valori ]
+    plt.plot(xvalues,yvalues)
+    plt.title(label)
+    plt.savefig(file+"_"+str(i)+".png")
+    plt.show()
+
+ 
+### EVALUATION OF THE EVOLUTION METRIC
 
 def wasserstein(lst1,lst2,n,l):
-    lst1.sort()
-    lst2.sort()
-    sum = 0.0
-    for i in range(n):
-        for j in range(l):
-            sum += max(lst2[i*l+j]-lst1[i],0)
-    return sum/(n*l)
-
-
-def wassersteine(lst1,lst2,n,l):
     lst1.sort()
     lst2.sort()
     sum = 0.0
@@ -273,7 +394,7 @@ def distance(pdef1,p1,d1,env1,pdef2,p2,d2,env2,k,n,l,rho):
         lst1 = list(map(lambda d: rho(i,d),data1[i]))
         lst2 = list(map(lambda d: rho(i,d),data2[i]))
         dist[i] = wasserstein(lst1,lst2,n,l)
-    return [max(dist[i:]) for i in range(k)]
+    return [max(dist[i:]) for i in range(k)], dist
 
 
 def compute_distance(data1,data2,k,n,l,rho):
@@ -282,33 +403,65 @@ def compute_distance(data1,data2,k,n,l,rho):
         lst1 = list(map(lambda d: rho(i,d),data1[i]))
         lst2 = list(map(lambda d: rho(i,d),data2[i]))
         dist[i] = wasserstein(lst1,lst2,n,l)
-    return [max(dist[i:]) for i in range(k)]
+    return [max(dist[i:]) for i in range(k)], dist
 
 
 def distance_set(pdef1,p1,d1,env1,dlist,k,n,l,rho):
     delta = [ 0 for i in range(k) ]
     for d2 in dlist:
-        dist = distance(pdef1,p1,d1,env1,pdef1,p1,d2,env1,k,n,l,rho)
+        (M,dist) = distance(pdef1,p1,d1,env1,pdef1,p1,d2,env1,k,n,l,rho)
         for i in range(k):
-            delta[i] = max(delta[i],dist[i])
+            delta[i] = max(delta[i],M[i])
     return delta
 
 
 def compute_distance_set(data1,dlist,k,n,l,rho):
     delta = [ 0 for i in range(k) ]
     for data2 in dlist:
-        dist = compute_distance(data1,data2,k,n,l,rho)
+        (M,dist) = compute_distance(data1,data2,k,n,l,rho)
         for i in range(k):
+            delta[i] = max(delta[i],M[i])
+    return delta
+
+
+def distancerho(pdef1,p1,d1,env1,pdef2,p2,d2,env2,k,n,l,rho):
+    data1 = simulatekkk(pdef1,env1,p1,d1,k,n)
+    data2 = simulatekkk(pdef2,env2,p2,d2,k,l*n)
+    for u in range(n):
+        for v in range(k):
+           print("tot_instants_of_stress_L=  "+ str(u) +" "+ str(v)+" "+str(data1[v][u]['tot_stress_instants_L']))
+    for u in range(l*n):
+        for v in range(k):
+           print("tot_instants_of_stress_L=  "+ str(u) +" "+ str(v)+" "+str(data2[v][u]['tot_stress_instants_L']))
+    dist = [ 0 for i in range(k) ]
+    for i in range(k):
+        lst1 = list(map(lambda d: rho(d),data1[i]))
+        lst2 = list(map(lambda d: rho(d),data2[i]))
+        dist[i] = wasserstein(lst1,lst2,n,l)
+        
+    return dist
+
+
+def distance_setrho(pdef1,p1,d1,env1,dlist,k,n,l,rho):
+    print("d1_attack_window= "+str(d1['attack_window']))
+    delta = [ 0 for i in range(k) ]
+    for d2 in dlist:
+        print("d2_attack_window= "+str(d2['attack_window']))
+        dist = distancerho(pdef1,p1,d1,env1,pdef1,p1,d2,env1,k,n,l,rho)
+        for i in range(k):
+            print("dist[i]="+str(dist[i]))
             delta[i] = max(delta[i],dist[i])
     return delta
 
 
+### ROBUSTNESS OF FORMULAE
+
 def eval_target(n, l, sample_function, rho, p, elist):
-    return [p-wassersteine(sample_function(n), [rho(ds) for ds in eset],n,l) for eset in elist]
+    return [p-wasserstein(sample_function(n), [rho(ds) for ds in eset],n,l) for eset in elist]
 
 
 def eval_brink(n, l, sample_function, rho, p, elist):
-    return [wassersteine([rho(ds)-p for ds in eset[:n]], sample_function(n*l),n,l) for eset in elist]
+    return [wasserstein([rho(ds)-p for ds in eset[:n]], sample_function(n*l),n,l) for eset in elist]
 
 
 def eval_not(vlist):
@@ -363,3 +516,17 @@ def compute_globally(vlist):
 
 def eval_globally(vlist,a,b):
     return [ compute_globally(vlist[i+a:i+b+1]) for i in range(0,len(vlist))]
+
+
+def compute_until(vlist1,vlist2,a,b):
+    k = len(vlist1)
+    vlist = [ 0 for i in range(0,k) ]
+    w1 = [ 0 for i in range(0,k) ]
+    w2 = [ 0 for i in range(0,k) ]
+    for i in range(0,k):
+        for j in range(a+i,b+i):
+            w1[j] = min(vlist1[i:j])
+            w2[j] = min(w1[j], vlist2[j])
+        vlist[i] = max(w2[a+i:b+i])
+    return vlist
+                
