@@ -104,7 +104,6 @@ def collect(agents, prob_function, state, steps, replica):
     return data
 
 
-
 def meanfield(agents, prob_function, state, steps):
     o = occupancy(agents,state)
     result = [o]
