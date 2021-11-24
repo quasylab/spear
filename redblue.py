@@ -23,7 +23,6 @@ def dist_mf_set(rho, mf1, mflist):
 
 
 
-
 def switch_red_blue(a):
     if a=="R":
         return "B"
